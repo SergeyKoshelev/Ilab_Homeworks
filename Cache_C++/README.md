@@ -9,4 +9,4 @@ If you want to see prepared by GoogleTest tests - use Cache_Tests.
 
 Else:
 Use Cache_C++/Cache_C++/arc.cc to work with cache by hand
-Or use Cache_Tests/Cache_Tests/test.cpp (it needs Cache_C++/Cache_C++/arc.h) to see prepared by GoogleTest tests
+Or use Cache_Tests/Cache_Tests/test.cpp (it needs arc.h) to see prepared by GoogleTest tests

@@ -1,5 +1,6 @@
 #include "pch.h"
-#include "../../Cache_C++/Cache_C++/arc.h"
+//#include "../../Cache_C++/Cache_C++/arc.h"
+#include "arc.h"
 
 TEST(Min_Max, Min) {
 	int res = min(1, 2);
