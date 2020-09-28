@@ -8,6 +8,8 @@
 #include <fstream>
 #include "arc.h"
 
+
+
 int main()
 {
 		int hits = 0;
