@@ -1,0 +1,4 @@
+﻿  arc.cc
+C:\Users\Sergey\source\repos\Cache_C++\Cache_C++\arc.h(71,20): warning C4244: аргумент: преобразование "unsigned __int64" в "int", возможна потеря данных
+C:\Users\Sergey\source\repos\Cache_C++\Cache_C++\arc.h(86,17): warning C4244: аргумент: преобразование "unsigned __int64" в "int", возможна потеря данных
+  Cache_C++.vcxproj -> C:\Users\Sergey\source\repos\Cache_C++\Debug\Cache_C++.exe
