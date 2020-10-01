@@ -1,1 +1,0 @@
-C:\Users\Sergey\source\repos\Cache_C++\Cache_Tests\Cache_Tests\x64\Debug\Cache_Tests.vcxproj.CopyComplete
