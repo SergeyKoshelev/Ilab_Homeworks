@@ -32,10 +32,27 @@ namespace Triangles {
 		int get_id();
 		double det2x2(double a11, double a12, double a21, double a22);
 		bool intersection(const Triangle& that);
+		bool point_on_plane(const Point& point);
+		bool inter_2D(const Triangle& that);
+		bool parallel(const Triangle& that);
 
 	private:
 
 		void create_plane();
+	};
+
+	class Line {
+		double x0, y0, z0;
+		double ax, ay, az;
+	public:
+		Line(const Triangle::Point& p1, const Triangle::Point& p2) : x0(p1.x), y0(p1.y), z0(p1.z), ax(p1.x-p2.x), ay(p1.y-p2.y), az(p1.z-p2.z) {};
+
+		void init(const Triangle& tr1, const Triangle& tr2);
+		Line(const Triangle& tr1, const Triangle& tr2)
+		{	
+			//under construction
+			init(tr1, tr2);
+		}
 	};
 
 	//operator == for points
@@ -107,13 +124,121 @@ namespace Triangles {
 		this->d = -det1 * this->A.x + det2 * this->A.y - det3 * this->A.z;
 	}
 
+	//check if 2 triangles intersect (main with that)
 	bool Triangle::intersection(const Triangle& that)
 	{
+		//under construction
+		bool A_on_plane = this->point_on_plane(that.A);
+		bool B_on_plane = this->point_on_plane(that.B);
+		bool C_on_plane = this->point_on_plane(that.C);
+
+		if (A_on_plane && B_on_plane && C_on_plane)
+			return inter_2D(that);//not ready
+	
+		if (parallel(that))
+			return false;
+
+		//planes intersect
+
 		return true;
 	}
 
+	//check if point is on plane
+	bool Triangle::point_on_plane(const Point& point)
+	{
+		double temp = point.x * this->a + point.y * this->b + point.z * this->c + d;
+		return (fabs(temp) < EPSILON);
+	}
+
+	//check if 2 triangles are parallel
+	bool Triangle::parallel(const Triangle& that)
+	{
+		if (fabs(this->b * that.c - this->c * that.b) < EPSILON)
+			if (fabs(this->b * that.a - this->a * that.b) < EPSILON)
+				if (fabs(this->a * that.c - this->c * that.a) < EPSILON)
+					return this->point_on_plane(that.A);
+		return false;
+	}
+
+	//intersection on plane
+	bool Triangle::inter_2D(const Triangle& that)
+	{
+		//under construction
+	}
+
+	//determinant of matrix 2x2
 	double Triangle::det2x2(double a11, double a12, double a21, double a22)
 	{
 		return a11 * a22 - a12 * a21;
+	}
+
+	void Line::init(const Triangle& tr1, const Triangle& tr2)
+	{
+		this->ax = tr1.b * tr2.c - tr1.c * tr2.b;
+		ay = tr1.c * tr2.a - tr1.a * tr2.c;
+		az = tr1.a * tr2.b - tr1.b * tr2.a;
+		//find point on a line
+
+		if ((fabs(tr1.a) < EPSILON) && (fabs(tr2.a) < EPSILON)) //a1 != 0 && a2 != 0
+		{
+			double temp_b = tr1.b * tr2.a - tr2.b * tr1.a;
+			double temp_c = tr1.c * tr2.a - tr2.c * tr1.a;
+			double temp_d = tr1.d * tr2.a - tr2.d * tr1.a;
+
+			if (fabs(temp_b) < EPSILON)
+			{
+				z0 = -temp_d / temp_c;
+				y0 = z0;
+				x0 = -(tr1.d + tr1.c * z0 + tr1.b * y0);
+			}
+			else
+			{
+				z0 = 0;
+				y0 = -temp_d / temp_b;
+				x0 = x0 = -(tr1.d + tr1.b * y0);
+			}
+		}
+		else if ((fabs(tr1.b) < EPSILON) && (fabs(tr2.b) < EPSILON)) //b1 != 0 && b2 != 0
+		{
+			double temp_a = tr1.a * tr2.b - tr2.a * tr1.b;
+			double temp_c = tr1.c * tr2.b - tr2.c * tr1.b;
+			double temp_d = tr1.d * tr2.b - tr2.d * tr1.b;
+
+			if (fabs(temp_a) < EPSILON)
+			{
+				z0 = -temp_d / temp_c;
+				x0 = z0;
+				y0 = -(tr1.d + tr1.c * z0 + tr1.a * x0);
+			}
+			else
+			{
+				z0 = 0;
+				x0 = -temp_d / temp_a;
+				y0 = -(tr1.d + tr1.a * x0);
+			}
+		}
+		else if ((fabs(tr1.c) < EPSILON) && (fabs(tr2.c) < EPSILON)) //c1 != 0 && c2 != 0
+		{
+			double temp_a = tr1.a * tr2.c - tr2.a * tr1.c;
+			double temp_b = tr1.b * tr2.c - tr2.b * tr1.c;
+			double temp_d = tr1.d * tr2.c - tr2.d * tr1.c;
+
+			if (fabs(temp_a) < EPSILON)
+			{
+				y0 = -temp_d / temp_b;
+				x0 = y0;
+				z0 = -(tr1.d + tr1.b * y0 + tr1.a * x0);
+			}
+			else
+			{
+				y0 = 0;
+				x0 = -temp_d / temp_a;
+				z0 = -(tr1.d + tr1.a * x0);
+			}
+		}
+		else
+		{
+
+		}
 	}
 }
