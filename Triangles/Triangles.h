@@ -30,7 +30,6 @@ namespace Triangles {
 
 
 
-
 namespace Triangles {
 
 	class Triangle {
@@ -44,11 +43,18 @@ namespace Triangles {
 		bool is_triangle();
 		bool in_right_side(const Triangle& that);
 		bool in_left_side(const Triangle& that);
+		int get_id();
 
 	private:
 
 		void create_plane();
 	};
+
+	//get triangle id
+	int Triangle::get_id()
+	{
+		return this->id;
+	}
 
 	//check is triangle
 	bool Triangle::is_triangle()

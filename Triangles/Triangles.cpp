@@ -12,13 +12,13 @@ int main()
     assert(std::cin.good());
 
     Tree::Ternary_Tree tree;
-    
+   
     double x1, y1, z1, x2, y2, z2, x3, y3, z3; 
 
     for (int i = 0; i < n; i++)
     {
         std::cin >> x1 >> y1 >> z1 >> x2 >> y2 >> z2 >> x3 >> y3 >> z3;
-        tree.tr_push({ i, {x1, y1, z1}, { x2, y2, z2 }, { x3, y3, z3 } });
+        tree.tr_push(Triangles::Triangle{ i, Triangles::Point{x1, y1, z1}, Triangles::Point{ x2, y2, z2 }, Triangles::Point{ x3, y3, z3 } });
     }
 
     bool* arr = new bool[n];

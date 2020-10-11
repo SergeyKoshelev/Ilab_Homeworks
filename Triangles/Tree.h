@@ -6,36 +6,89 @@
 
 namespace Tree {
 
-	class Node {
-
-		Node* left;
-		Node* middle;
-		Node* right;
-		Triangles::Triangle elem;
-		bool flag;
+	class Ternary_Tree {
 
 	public:
-		Node(const Triangles::Triangle& tr) : elem(tr), left(nullptr), middle(nullptr), right(nullptr), flag(false) {};
+		class Node {
 
-		void push_in(Triangles::Triangle& new_elem);
+		public:
+			Node* left;
+			Node* middle;
+			Node* right;
+			Triangles::Triangle elem;
+			bool flag;
+		
+			Node(const Triangles::Triangle& tr) : elem(tr), left(nullptr), middle(nullptr), right(nullptr), flag(false) {};
+
+			Node* create_node(Triangles::Triangle& elem);
+			void push_left(Triangles::Triangle& new_elem);
+			void push_right(Triangles::Triangle& new_elem);
+			void push_middle(Triangles::Triangle& new_elem);
+			void push_in(Triangles::Triangle& new_elem);
+			void see_node(bool* arr);
+			void free();
+		};
 
 	private:
-		Node* create_node(Triangles::Triangle& elem);
-		void push_left(Triangles::Triangle& new_elem);
-		void push_right(Triangles::Triangle& new_elem);
-		void push_middle(Triangles::Triangle& new_elem);
+		Node* head;
+
+	public:
+		Ternary_Tree() : head(nullptr) {};
+
+		bool tr_push(Triangles::Triangle& elem);
+		void undergo(bool* arr);
 		void free();
+
 	};
 
 	//create new node and return pointer on it
-	Node* Node::create_node(Triangles::Triangle& elem)
+	Ternary_Tree::Node* Ternary_Tree::Node::create_node(Triangles::Triangle& elem)
 	{
 		Node* nodeptr = new Node{ elem };
 		return nodeptr;
 	}
 
+	//push new_elem in left branch
+	void Ternary_Tree::Node::push_left(Triangles::Triangle& new_elem)
+	{
+		if (this->left == nullptr)
+			this->left = create_node(new_elem);
+		else
+			this->left->push_in(new_elem);
+	}
+
+	//push new_elem in right branch
+	void Ternary_Tree::Node::push_right(Triangles::Triangle& new_elem)
+	{
+		if (this->right == nullptr)
+			this->right = create_node(new_elem);
+		else
+			this->right->push_in(new_elem);
+	}
+
+	//push new_elem in middle branch
+	void Ternary_Tree::Node::push_middle(Triangles::Triangle& new_elem)
+	{
+		if (this->middle == nullptr)
+			this->middle = create_node(new_elem);
+		else
+			this->middle->push_in(new_elem);
+	}
+
+	void Ternary_Tree::Node::free()
+	{
+		if (this->left != nullptr)
+			this->left->free();
+		if (this->right != nullptr)
+			this->right->free();
+		if (this->middle != nullptr)
+			this->right->free();
+
+		delete this;
+	}
+
 	//push new_elem due to its location
-	void Node::push_in(Triangles::Triangle& new_elem)
+	void Ternary_Tree::Node::push_in(Triangles::Triangle& new_elem)
 	{
 		//under construction
 		if (elem.in_left_side(new_elem))
@@ -51,63 +104,17 @@ namespace Tree {
 
 	}
 
-	//push new_elem in left branch
-	void Node::push_left(Triangles::Triangle& new_elem)
-	{
-		if (this->left == nullptr)
-			this->left = create_node(new_elem);
-		else
-			this->left->push_in(new_elem);
-	}
-
-	//push new_elem in right branch
-	void Node::push_right(Triangles::Triangle& new_elem)
-	{
-		if (this->right == nullptr)
-			this->right = create_node(new_elem);
-		else
-			this->right->push_in(new_elem);
-	}
-
-	//push new_elem in middle branch
-	void Node::push_middle(Triangles::Triangle& new_elem)
-	{
-		if (this->middle == nullptr)
-			this->middle = create_node(new_elem);
-		else
-			this->middle->push_in(new_elem);
-	}
-
-	//free memory of this node and its children
-	void Node::free()
+	void Ternary_Tree::Node::see_node(bool* arr)
 	{
 		if (this->left != nullptr)
-			this->left->free();
+			this->left->see_node(arr);
 		if (this->right != nullptr)
-			this->right->free();
+			this->right->see_node(arr);
 		if (this->middle != nullptr)
-			this->right->free();
+			this->right->see_node(arr);
 
-		delete this;
+		arr[this->elem.get_id()] = true;
 	}
-}
-
-
-namespace Tree {
-
-	class Ternary_Tree {
-
-		Node* head;
-
-	public:
-		Ternary_Tree() : head(nullptr) {};
-
-		
-		bool tr_push(Triangles::Triangle& elem);
-		void undergo(bool* arr);
-		void free();
-
-	};
 
 	//push triangle in tree
 	bool Ternary_Tree::tr_push(Triangles::Triangle& elem)
@@ -131,7 +138,7 @@ namespace Tree {
 	//lookup all tree
 	void Ternary_Tree::undergo(bool* arr)
 	{
-		//under construction 
+		this->head->see_node(arr);
 	}
 
 	//delete tree
