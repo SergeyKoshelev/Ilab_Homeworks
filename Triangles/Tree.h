@@ -20,12 +20,13 @@ namespace Tree {
 		
 			Node(const Triangles::Triangle& tr) : elem(tr), left(nullptr), middle(nullptr), right(nullptr), flag(false) {};
 
-			Node* create_node(Triangles::Triangle& elem);
-			void push_left(Triangles::Triangle& new_elem);
-			void push_right(Triangles::Triangle& new_elem);
-			void push_middle(Triangles::Triangle& new_elem);
-			void push_in(Triangles::Triangle& new_elem);
-			void see_node(bool* arr);
+			Node* create_node(const Triangles::Triangle& elem);
+			void push_left(const Triangles::Triangle& new_elem);
+			void push_right(const Triangles::Triangle& new_elem);
+			void push_middle(const Triangles::Triangle& new_elem);
+			void push_in(const Triangles::Triangle& new_elem);
+			void check(bool* arr);
+			void check_branch(bool* arr, Ternary_Tree::Node* that);
 			void free();
 		};
 
@@ -35,21 +36,21 @@ namespace Tree {
 	public:
 		Ternary_Tree() : head(nullptr) {};
 
-		bool tr_push(Triangles::Triangle& elem);
+		bool tr_push(const Triangles::Triangle& elem);
 		void undergo(bool* arr);
 		void free();
 
 	};
 
 	//create new node and return pointer on it
-	Ternary_Tree::Node* Ternary_Tree::Node::create_node(Triangles::Triangle& elem)
+	Ternary_Tree::Node* Ternary_Tree::Node::create_node(const Triangles::Triangle& elem)
 	{
 		Node* nodeptr = new Node{ elem };
 		return nodeptr;
 	}
 
 	//push new_elem in left branch
-	void Ternary_Tree::Node::push_left(Triangles::Triangle& new_elem)
+	void Ternary_Tree::Node::push_left(const Triangles::Triangle& new_elem)
 	{
 		if (this->left == nullptr)
 			this->left = create_node(new_elem);
@@ -58,7 +59,7 @@ namespace Tree {
 	}
 
 	//push new_elem in right branch
-	void Ternary_Tree::Node::push_right(Triangles::Triangle& new_elem)
+	void Ternary_Tree::Node::push_right(const Triangles::Triangle& new_elem)
 	{
 		if (this->right == nullptr)
 			this->right = create_node(new_elem);
@@ -67,7 +68,7 @@ namespace Tree {
 	}
 
 	//push new_elem in middle branch
-	void Ternary_Tree::Node::push_middle(Triangles::Triangle& new_elem)
+	void Ternary_Tree::Node::push_middle(const Triangles::Triangle& new_elem)
 	{
 		if (this->middle == nullptr)
 			this->middle = create_node(new_elem);
@@ -88,7 +89,7 @@ namespace Tree {
 	}
 
 	//push new_elem due to its location
-	void Ternary_Tree::Node::push_in(Triangles::Triangle& new_elem)
+	void Ternary_Tree::Node::push_in(const Triangles::Triangle& new_elem)
 	{
 		//under construction
 		if (elem.in_left_side(new_elem))
@@ -104,20 +105,36 @@ namespace Tree {
 
 	}
 
-	void Ternary_Tree::Node::see_node(bool* arr)
+	//check if branch of this node have intersections
+	void Ternary_Tree::Node::check(bool* arr)
 	{
 		if (this->left != nullptr)
-			this->left->see_node(arr);
+			this->left->check(arr);
 		if (this->right != nullptr)
-			this->right->see_node(arr);
+			this->right->check(arr);
 		if (this->middle != nullptr)
-			this->right->see_node(arr);
+			this->middle->check_branch(arr, this);
+	}
 
-		arr[this->elem.get_id()] = true;
+	//check intersections with THAT in branch
+	void Ternary_Tree::Node::check_branch(bool* arr, Ternary_Tree::Node* that)
+	{
+		if (this->left != nullptr)
+			this->left->check_branch(arr, that);
+		if (this->right != nullptr)
+			this->right->check_branch(arr, that);
+		if (this->middle != nullptr)
+			this->right->check_branch(arr, that);
+
+		if (that->elem.intersection(this->elem))
+		{
+			arr[that->elem.get_id()] = true;
+			arr[this->elem.get_id()] = true;
+		}
 	}
 
 	//push triangle in tree
-	bool Ternary_Tree::tr_push(Triangles::Triangle& elem)
+	bool Ternary_Tree::tr_push(const Triangles::Triangle& elem)
 	{
 		//triangle is a point
 		if (!elem.is_triangle())
@@ -138,7 +155,8 @@ namespace Tree {
 	//lookup all tree
 	void Ternary_Tree::undergo(bool* arr)
 	{
-		this->head->see_node(arr);
+		if (this->head != nullptr)
+			this->head->check(arr);
 	}
 
 	//delete tree
