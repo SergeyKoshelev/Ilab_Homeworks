@@ -1,8 +1,7 @@
-# Ilab_Homeworks
-1)Cache_C++
+# 3D Triangles intersection
 
-ARC on C++
+1)Input count of your triangles
 
-2)Triangles
+2)Input all your 3D triangles (x1, y1, x1, x2, ....)
 
-Intersections of triangles
+3)Get id of all intersected triangles
