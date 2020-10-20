@@ -75,23 +75,29 @@ namespace Tree {
 			middle->push_in(new_elem);
 	}
 
+	//free node and its children
 	void Ternary_Tree::Node::free()
 	{
-		std::cout << "free node with id: " << elem.get_id() << std::endl;
 		if (left != nullptr)
+		{
 			left->free();
+			delete left;
+		}
 		if (right != nullptr)
+		{
 			right->free();
+			delete right;
+		}
 		if (middle != nullptr)
-			right->free();
-
-		delete this;
+		{
+			middle->free();
+			delete middle;
+		}
 	}
 
 	//push new_elem due to its location
 	void Ternary_Tree::Node::push_in(const Triangles::Triangle& new_elem)
 	{
-		//under construction
 		if (elem.in_left_side(new_elem))
 			push_left(new_elem);
 		else if (elem.in_right_side(new_elem))
@@ -130,10 +136,11 @@ namespace Tree {
 		{
 			arr[that->elem.get_id()] = true;
 			arr[elem.get_id()] = true;
-			that->elem.print_trian();
-			std::cout << "\tand\t" << std::endl;
-			elem.print_trian();
-			std::cout << std::endl;
+			//printing intersected triangles
+			//that->elem.print_trian();
+			//std::cout << "\tand\t" << std::endl;
+			//elem.print_trian();
+			//std::cout << std::endl;
 		}
 	}
 
@@ -166,6 +173,7 @@ namespace Tree {
 	//delete tree
 	void Ternary_Tree::free()
 	{
-		head->free();
+		if (head != nullptr)
+			head->free();
 	}
 }
