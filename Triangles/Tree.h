@@ -16,9 +16,8 @@ namespace Tree {
 			Node* middle;
 			Node* right;
 			Triangles::Triangle elem;
-			bool flag;
 		
-			Node(const Triangles::Triangle& tr) : elem(tr), left(nullptr), middle(nullptr), right(nullptr), flag(false) {};
+			Node(const Triangles::Triangle& tr) : elem(tr), left(nullptr), middle(nullptr), right(nullptr) {};
 
 			Node* create_node(const Triangles::Triangle& elem);
 			void push_left(const Triangles::Triangle& new_elem);
@@ -52,38 +51,39 @@ namespace Tree {
 	//push new_elem in left branch
 	void Ternary_Tree::Node::push_left(const Triangles::Triangle& new_elem)
 	{
-		if (this->left == nullptr)
-			this->left = create_node(new_elem);
+		if (left == nullptr)
+			left = create_node(new_elem);
 		else
-			this->left->push_in(new_elem);
+			left->push_in(new_elem);
 	}
 
 	//push new_elem in right branch
 	void Ternary_Tree::Node::push_right(const Triangles::Triangle& new_elem)
 	{
-		if (this->right == nullptr)
-			this->right = create_node(new_elem);
+		if (right == nullptr)
+			right = create_node(new_elem);
 		else
-			this->right->push_in(new_elem);
+			right->push_in(new_elem);
 	}
 
 	//push new_elem in middle branch
 	void Ternary_Tree::Node::push_middle(const Triangles::Triangle& new_elem)
 	{
-		if (this->middle == nullptr)
-			this->middle = create_node(new_elem);
+		if (middle == nullptr)
+			middle = create_node(new_elem);
 		else
-			this->middle->push_in(new_elem);
+			middle->push_in(new_elem);
 	}
 
 	void Ternary_Tree::Node::free()
 	{
-		if (this->left != nullptr)
-			this->left->free();
-		if (this->right != nullptr)
-			this->right->free();
-		if (this->middle != nullptr)
-			this->right->free();
+		std::cout << "free node with id: " << elem.get_id() << std::endl;
+		if (left != nullptr)
+			left->free();
+		if (right != nullptr)
+			right->free();
+		if (middle != nullptr)
+			right->free();
 
 		delete this;
 	}
@@ -93,14 +93,14 @@ namespace Tree {
 	{
 		//under construction
 		if (elem.in_left_side(new_elem))
-			this->push_left(new_elem);
+			push_left(new_elem);
 		else if (elem.in_right_side(new_elem))
-			this->push_right(new_elem);
+			push_right(new_elem);
 		else
 		{
-			this->push_left(new_elem);
-			this->push_right(new_elem);
-			this->push_middle(new_elem);
+			push_left(new_elem);
+			push_right(new_elem);
+			push_middle(new_elem);
 		}
 
 	}
@@ -108,28 +108,32 @@ namespace Tree {
 	//check if branch of this node have intersections
 	void Ternary_Tree::Node::check(bool* arr)
 	{
-		if (this->left != nullptr)
-			this->left->check(arr);
-		if (this->right != nullptr)
-			this->right->check(arr);
-		if (this->middle != nullptr)
-			this->middle->check_branch(arr, this);
+		if (left != nullptr)
+			left->check(arr);
+		if (right != nullptr)
+			right->check(arr);
+		if (middle != nullptr)
+			middle->check_branch(arr, this);
 	}
 
 	//check intersections with THAT in branch
 	void Ternary_Tree::Node::check_branch(bool* arr, Ternary_Tree::Node* that)
 	{
-		if (this->left != nullptr)
-			this->left->check_branch(arr, that);
-		if (this->right != nullptr)
-			this->right->check_branch(arr, that);
-		if (this->middle != nullptr)
-			this->right->check_branch(arr, that);
+		if (left != nullptr)
+			left->check_branch(arr, that);
+		if (right != nullptr)
+			right->check_branch(arr, that);
+		if (middle != nullptr)
+			right->check_branch(arr, that);
 
-		if (that->elem.intersection(this->elem))
+		if (that->elem.intersection(elem))
 		{
 			arr[that->elem.get_id()] = true;
-			arr[this->elem.get_id()] = true;
+			arr[elem.get_id()] = true;
+			that->elem.print_trian();
+			std::cout << "\tand\t" << std::endl;
+			elem.print_trian();
+			std::cout << std::endl;
 		}
 	}
 
@@ -141,27 +145,27 @@ namespace Tree {
 			return false;
 
 		//first triangle in tree
-		if (this->head == nullptr)
+		if (head == nullptr)
 		{
-			this->head = new Node{ elem };
+			head = new Node{ elem };
 			return true;
 		}
 
 		//not first triangle
-		this->head->push_in(elem);
+		head->push_in(elem);
 		return true;
 	}
 
 	//lookup all tree
 	void Ternary_Tree::undergo(bool* arr)
 	{
-		if (this->head != nullptr)
-			this->head->check(arr);
+		if (head != nullptr)
+			head->check(arr);
 	}
 
 	//delete tree
 	void Ternary_Tree::free()
 	{
-		this->head->free();
+		head->free();
 	}
 }

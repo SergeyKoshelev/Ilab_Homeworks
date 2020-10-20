@@ -27,10 +27,11 @@ int main()
     bool* arr = new bool[n]{ false };
     tree.undergo(arr);
 
-    std::cout << "Triangles that intersects: ";
+    std::cout << "Triangles which intersects: ";
     for (int i = 0; i < n; i++)
         if (arr[i])
-            std::cout << i + 1 << " ";
+            std::cout << i << " ";
+
     std::cout << std::endl;
 
     tree.free();
