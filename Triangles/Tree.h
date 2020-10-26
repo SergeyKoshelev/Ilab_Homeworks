@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <vector>
 #include "Triangles.h"
 
 namespace Tree {
@@ -24,8 +25,8 @@ namespace Tree {
 			void push_right(const Triangles::Triangle& new_elem);
 			void push_middle(const Triangles::Triangle& new_elem);
 			void push_in(const Triangles::Triangle& new_elem);
-			void check(bool* arr);
-			void check_branch(bool* arr, Ternary_Tree::Node* that);
+			void check(std::vector<bool>& arr);
+			void check_branch(std::vector<bool>& arr, Ternary_Tree::Node* that);
 			void free();
 		};
 
@@ -36,7 +37,7 @@ namespace Tree {
 		Ternary_Tree() : head(nullptr) {};
 
 		bool tr_push(const Triangles::Triangle& elem);
-		void undergo(bool* arr);
+		void undergo(std::vector<bool>& arr);
 		void free();
 
 	};
@@ -112,7 +113,7 @@ namespace Tree {
 	}
 
 	//check if branch of this node have intersections
-	void Ternary_Tree::Node::check(bool* arr)
+	void Ternary_Tree::Node::check(std::vector<bool>& arr)
 	{
 		if (left != nullptr)
 			left->check(arr);
@@ -123,7 +124,7 @@ namespace Tree {
 	}
 
 	//check intersections with THAT in branch
-	void Ternary_Tree::Node::check_branch(bool* arr, Ternary_Tree::Node* that)
+	void Ternary_Tree::Node::check_branch(std::vector<bool>& arr, Ternary_Tree::Node* that)
 	{
 		if (left != nullptr)
 			left->check_branch(arr, that);
@@ -164,7 +165,7 @@ namespace Tree {
 	}
 
 	//lookup all tree
-	void Ternary_Tree::undergo(bool* arr)
+	void Ternary_Tree::undergo(std::vector<bool>& arr)
 	{
 		if (head != nullptr)
 			head->check(arr);

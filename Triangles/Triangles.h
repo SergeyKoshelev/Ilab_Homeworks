@@ -8,6 +8,8 @@ const double EPSILON = 0.00000001;
 
 namespace Triangles {
 
+	class Line;
+
 	class Triangle {
 	public:
 		class Point {
@@ -15,10 +17,13 @@ namespace Triangles {
 			double x, y, z;
 
 			Point(double x_, double y_, double z_) : x(x_), y(y_), z(z_) {};
+			Point(Point* p) : x(p->x), y(p->y), z(p->z) {};
 
 			bool operator == (const Point& that) const;
 
 			bool between(const Point& p1, const Point& p2) const;
+			bool between(Point* p1, Point* p2) const;
+			bool on_line(const Point& p1, const Point& p2) const;
 		};
 
 		int id;
@@ -40,6 +45,7 @@ namespace Triangles {
 		bool point_inside(const Point& p) const;
 		bool inter_line_segs(const Triangle& tr) const;
 		void print_trian() const;
+		bool two_line_segs(const Point& p11, const Point& p12, const Point& p21, const Point& p22) const;
 
 	private:
 
@@ -57,14 +63,15 @@ namespace Triangles {
 		}
 
 		void init(const Triangle& tr1, const Triangle& tr2);
-		Triangle::Point* line_inter(const Line& that);
+		Triangle::Point* line_inter(const Line& that) const;
 		double get_ax() const;
 		double get_ay() const;
 		double get_az() const;
 		double get_x0() const;
 		double get_y0() const;
 		double get_z0() const;
-	};
+		bool inter_on_common_line(const Triangle& t1, const Triangle& tr2) const;
+	}; 
 
 	//determinant of matrix 2x2
 	double det2x2(double a11, double a12, double a21, double a22)
@@ -77,18 +84,50 @@ namespace Triangles {
 	{
 		if (std::fabs(x - that.x) <= EPSILON)
 			if (std::fabs(y - that.y) <= EPSILON)
-				if (std::fabs(y - that.y) <= EPSILON)
+				if (std::fabs(z - that.z) <= EPSILON)
 					return true;
 
 		return false;
 	}
 
-	//check if point is between 2 other points
+	//check if point is between 2 other points (condition is that there are on 1 line)
 	bool Triangle::Point::between(const Point& p1, const Point& p2) const
 	{
 		if ((x < (std::max(p1.x, p2.x) + EPSILON)) && (x > (std::min(p1.x, p2.x) - EPSILON)) &&
 			(y < (std::max(p1.y, p2.y) + EPSILON)) && (y > (std::min(p1.y, p2.y) - EPSILON)) &&
 			(z < (std::max(p1.z, p2.z) + EPSILON)) && (z > (std::min(p1.z, p2.z) - EPSILON)))
+			return true;
+		return false;
+	}
+
+	////check if point is between 2 other points (condition is that there are on 1 line) (overrided for pointers)
+	bool Triangle::Point::between(Point* p1, Point* p2) const
+	{
+		if ((p1 == nullptr) || (p2 == nullptr))
+			return false;
+		else if ((x < (std::max(p1->x, p2->x) + EPSILON)) && (x > (std::min(p1->x, p2->x) - EPSILON)) &&
+			(y < (std::max(p1->y, p2->y) + EPSILON)) && (y > (std::min(p1->y, p2->y) - EPSILON)) &&
+			(z < (std::max(p1->z, p2->z) + EPSILON)) && (z > (std::min(p1->z, p2->z) - EPSILON)))
+			return true;
+		else return false;
+	}
+
+	//check if points are on 1 line
+	bool Triangle::Point::on_line(const Point& p1, const Point& p2) const
+	{
+		double t = 0;
+		Line line = Line{ p1, p2 };
+		if (fabs(line.get_ax()) > EPSILON)
+			t = (x - line.get_x0()) / line.get_ax();
+		else if (fabs(line.get_ay()) > EPSILON)
+			t = (y - line.get_y0()) / line.get_ay();
+		else 
+			t = (z - line.get_z0()) / line.get_az();
+		double new_x = line.get_x0() + line.get_ax() * t;
+		double new_y = line.get_y0() + line.get_ay() * t;
+		double new_z = line.get_z0() + line.get_az() * t;
+
+		if ((fabs(new_x - x) < EPSILON) && (fabs(new_y - y) < EPSILON) && (fabs(new_z - z) < EPSILON))
 			return true;
 		return false;
 	}
@@ -103,6 +142,8 @@ namespace Triangles {
 	bool Triangle::is_triangle() const
 	{
 		if ((A == C)||(A == B)||(C == B))
+			return false;
+		if (A.on_line(B, C))
 			return false;
 		return true;
 	}
@@ -127,7 +168,7 @@ namespace Triangles {
 		double res2 = a * that.B.x + b * that.B.y + c * that.B.z + d;
 		double res3 = a * that.C.x + b * that.C.y + c * that.C.z + d;
 
-		if ((res1 < EPSILON) && (res2 < EPSILON) && (res3 < EPSILON))
+		if ((res1 < -EPSILON) && (res2 < -EPSILON) && (res3 < -EPSILON))
 			return true;
 
 		return false;
@@ -162,7 +203,10 @@ namespace Triangles {
 			return inter_2D(that);
 	
 		//check complex intersection on line
-		return inter_line_segs(that);
+		Triangle this_tr = Triangle{ id, Point{A.x, A.y, A.z}, Point{B.x, B.y, B.z}, Point{C.x, C.y, C.z} };
+		Line common_line = Line{ that, this_tr};
+
+		return common_line.inter_on_common_line(that, this_tr);
 	}
 
 	//check if point is on plane
@@ -188,16 +232,29 @@ namespace Triangles {
 		double v1_x = det2x2(p.y - A.y, p.z - A.z, B.y - A.y, B.z - A.z);
 		double v1_y = - det2x2(p.x - A.x, p.z - A.z, B.x - A.x, B.z - A.z);
 		double v1_z = det2x2(p.x - A.x, p.y - A.y, B.x - A.x, B.y - A.y);
+		double len_v1 = v1_x * v1_x + v1_y * v1_y + v1_z * v1_z;
 
 		double v2_x = det2x2(p.y - B.y, p.z - B.z, C.y - B.y, C.z - B.z);
 		double v2_y = -det2x2(p.x - B.x, p.z - B.z, C.x - B.x, C.z - B.z);
 		double v2_z = det2x2(p.x - B.x, p.y - B.y, C.x - B.x, C.y - B.y);
+		double len_v2 = v2_x * v2_x + v2_y * v2_y + v2_z * v2_z;
 
-		double v3_x = det2x2(p.y - C.y, p.z - C.z, C.y - B.y, C.z - B.z);
-		double v3_y = -det2x2(p.x - C.x, p.z - C.z, C.x - B.x, C.z - B.z);
-		double v3_z = det2x2(p.x - C.x, p.y - C.y, C.x - B.x, C.y - B.y);
+		double v3_x = det2x2(p.y - C.y, p.z - C.z, C.y - B.y, A.z - C.z);
+		double v3_y = -det2x2(p.x - C.x, p.z - C.z, C.x - B.x, A.z - C.z);
+		double v3_z = det2x2(p.x - C.x, p.y - C.y, C.x - B.x, A.y - C.y);
+		double len_v3 = v3_x * v3_x + v3_y * v3_y + v3_z * v3_z;
 
-		if (((v1_x * v2_x + v1_y * v2_y + v1_z * v2_z) > 0) && ((v1_x * v3_x + v1_y * v3_y + v1_z * v3_z) > 0))
+		double sqal_v1_v2 = v1_x * v2_x + v1_y * v2_y + v1_z * v2_z;
+		double sqal_v1_v3 = v1_x * v3_x + v1_y * v3_y + v1_z * v3_z;
+
+		if ((sqal_v1_v2 > EPSILON) && (sqal_v1_v3 > EPSILON))
+			return true;
+
+		if ((len_v1 == 0) && (p.between(A, B)))
+			return true;
+		if ((len_v2 == 0) && (p.between(B, C)))
+			return true;
+		if ((len_v3 == 0) && (p.between(C, A)))
 			return true;
 
 		return false;
@@ -277,7 +334,7 @@ namespace Triangles {
 	double Line::get_z0() const { return z0; }
 
 	//check intersections of 2 lines and return point 
-	Triangle::Point* Line::line_inter(const Line& that)
+	Triangle::Point* Line::line_inter(const Line& that) const 
 	{
 		double that_ax = that.get_ax();
 		double that_ay = that.get_ay();
@@ -322,48 +379,91 @@ namespace Triangles {
 		return point;
 	}
 
+	//check intersections of triangles' line segments
 	bool Triangle::inter_line_segs(const Triangle& that) const
 	{
-		bool flag = false;
-		Line AB = Line{ A, B };
-		Line AC = Line{ A, C };
-		Line BC = Line{ B, C };
-		Triangle::Point* AB_AB = AB.line_inter(Line{ that.A, that.B });
-		Triangle::Point* AB_AC = AB.line_inter(Line{ that.A, that.C });
-		Triangle::Point* AB_BC = AB.line_inter(Line{ that.B, that.C });
-		Triangle::Point* AC_AB = AC.line_inter(Line{ that.A, that.B });
-		Triangle::Point* AC_AC = AC.line_inter(Line{ that.A, that.C });
-		Triangle::Point* AC_BC = AC.line_inter(Line{ that.B, that.C });
-		Triangle::Point* BC_AB = BC.line_inter(Line{ that.A, that.B });
-		Triangle::Point* BC_AC = BC.line_inter(Line{ that.A, that.C });
-		Triangle::Point* BC_BC = BC.line_inter(Line{ that.B, that.C });
-		if ((AB_AB->between(A, B)) && (AB_AB->between(that.A, that.B)))
-			flag = true;
-		if ((AB_AC->between(A, B)) && (AB_AC->between(that.A, that.C)))
-			flag = true;
-		if ((AB_BC->between(A, B)) && (AB_BC->between(that.B, that.C)))
-			flag = true;
-		if ((AC_AB->between(A, C)) && (AC_AB->between(that.A, that.B)))
-			flag = true;
-		if ((AC_AC->between(A, C)) && (AC_AC->between(that.A, that.C)))
-			flag = true;
-		if ((AC_BC->between(A, C)) && (AC_BC->between(that.B, that.C)))
-			flag = true;
-		if ((BC_AB->between(B, C)) && (BC_AB->between(that.A, that.B)))
-			flag = true;
-		if ((BC_AC->between(B, C)) && (BC_AC->between(that.A, that.C)))
-			flag = true;
-		if ((BC_BC->between(B, C)) && (BC_BC->between(that.B, that.C)))
-			flag = true;
-		delete AB_AB, AB_AC, AB_BC, AC_AB, AC_AC, AC_BC, BC_AB, BC_AC, BC_BC;
+		bool flag = two_line_segs(A, B, that.A, that.B) || two_line_segs(A, B, that.A, that.C) || two_line_segs(A, B, that.B, that.C) ||
+			two_line_segs(A, C, that.A, that.B) || two_line_segs(A, C, that.A, that.C) || two_line_segs(A, C, that.B, that.C) ||
+			two_line_segs(B, C, that.A, that.B) || two_line_segs(B, C, that.A, that.C) || two_line_segs(B, C, that.B, that.C);
 		return flag;
 	}
 
+	//check intersect of 2 line segs on points
+	bool Triangle::two_line_segs(const Point& p11, const Point& p12, const Point& p21, const Point& p22) const
+	{
+		bool flag = false;
+		Line line1 = Line{ p11, p12 };
+		Line line2 = Line{ p21, p22 };
+		Triangle::Point* inter_point = line1.line_inter(line2);
+		if (inter_point && (inter_point->between(p11, p12)) && (inter_point->between(p21, p22)))
+			flag = true;
+		delete inter_point;
+		return flag;
+	}
+
+	//print triangle
 	void Triangle::print_trian() const
 	{
 		std::cout << "id: " << id << std::endl;
 		std::cout << "A: " << A.x << " " << A.y << " " << A.z << std::endl;
 		std::cout << "B: " << B.x << " " << B.y << " " << B.z << std::endl;
 		std::cout << "C: " << C.x << " " << C.y << " " << C.z << std::endl;
+	}
+
+	//check intersection of triangles on common line
+	bool Line::inter_on_common_line(const Triangle& tr1, const Triangle& tr2) const
+	{
+		bool flag = false;
+		Triangle::Point* with_AB1 = line_inter(Line{ tr1.A, tr1.B });
+		Triangle::Point* with_AC1 = line_inter(Line{ tr1.A, tr1.C });
+		Triangle::Point* with_BC1 = line_inter(Line{ tr1.B, tr1.C });
+		Triangle::Point* with_AB2 = line_inter(Line{ tr2.A, tr2.B });
+		Triangle::Point* with_AC2 = line_inter(Line{ tr2.A, tr2.C });
+		Triangle::Point* with_BC2 = line_inter(Line{ tr2.B, tr2.C });
+
+		Triangle::Point* p11 = nullptr;
+		Triangle::Point* p12 = nullptr;
+		Triangle::Point* p21 = nullptr;
+		Triangle::Point* p22 = nullptr;
+
+		if (with_AB1 && with_AC1 && with_AB1->between(tr1.A, tr1.B) && with_AC1->between(tr1.A, tr1.C))
+		{
+			p11 = with_AB1;
+			p12 = with_AC1;
+		}
+		else if (with_AB1 && with_BC1 && with_AB1->between(tr1.A, tr1.B) && with_BC1->between(tr1.B, tr1.C))
+		{
+			p11 = with_AB1;
+			p12 = with_BC1;
+		}
+		else if (with_BC1 && with_AC1 && with_BC1->between(tr1.B, tr1.C) && with_AC1->between(tr1.A, tr1.C))
+		{
+			p11 = with_BC1;
+			p12 = with_AC1;
+		}
+
+		if (with_AB2 && with_AC2 && with_AB2->between(tr2.A, tr2.B) && with_AC2->between(tr2.A, tr2.C))
+		{
+			p21 = with_AB2;
+			p22 = with_AC2;
+		}
+		else if (with_AB2 && with_BC2 && with_AB2->between(tr2.A, tr2.B) && with_BC2->between(tr2.B, tr2.C))
+		{
+			p21 = with_AB2;
+			p22 = with_BC2;
+		}
+		else if (with_BC2 && with_AC2 && with_BC2->between(tr2.B, tr2.C) && with_AC2->between(tr2.A, tr2.C))
+		{
+			p21 = with_BC2;
+			p22 = with_AC2;
+		}
+
+		if ((p11 && p11->between(p21, p22)) || 
+			(p12 && p12->between(p21, p22)) || 
+			(p21 && p21->between(p11, p12)) || 
+			(p22 && p22->between(p11, p12)))
+			flag = true;
+		delete with_AB1, with_AC1, with_BC1, with_AB2, with_AC2, with_BC2;
+		return flag;
 	}
 }
