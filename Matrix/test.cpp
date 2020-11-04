@@ -55,6 +55,39 @@ TEST(deter2x2, case3)
 	EXPECT_EQ(deter, 0);
 }
 
+TEST(deter2x2, zero_infinity_1)
+{
+	using namespace LinAl;
+	int dim = 2;
+	Matrix matr{ dim };
+	matr.set_elem(0, 0, 0); matr.set_elem(0, 1, 1);
+	matr.set_elem(1, 0, 2); matr.set_elem(1, 1, 8);
+	double deter = matr.det();
+	EXPECT_EQ(deter, -2);
+}
+
+TEST(deter2x2, zero_infinity_2)
+{
+	using namespace LinAl;
+	int dim = 2;
+	Matrix matr{ dim };
+	matr.set_elem(0, 0, 1); matr.set_elem(0, 1, 4);
+	matr.set_elem(1, 0, 2); matr.set_elem(1, 1, 3);
+	double deter = matr.det();
+	EXPECT_EQ(deter, -5);
+}
+
+TEST(deter2x2, zero_row)
+{
+	using namespace LinAl;
+	int dim = 2;
+	Matrix matr{ dim };
+	matr.set_elem(0, 0, 0); matr.set_elem(0, 1, 0);
+	matr.set_elem(1, 0, 2); matr.set_elem(1, 1, 3);
+	double deter = matr.det();
+	EXPECT_EQ(deter, 0);
+}
+
 TEST(deter5x5, case1)
 {
 	using namespace LinAl;

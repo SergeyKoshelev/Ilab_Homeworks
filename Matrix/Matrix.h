@@ -23,12 +23,15 @@ namespace LinAl {
 		Matrix operator * (double k) const;
 		void operator *= (double k);
 		void operator = (const Matrix& that);
+		void print();
 
 	private:
 		Matrix prepare_for_decomp() const;
 		void set_matr(const Matrix& that);
 		Matrix LU_decomp() const;
 		void create_empty();
+		void swap_rows(int r1, int r2);
+		Matrix LUP(int& swaps) const;
 	};
 
 	//get dimension of matrix
@@ -46,10 +49,10 @@ namespace LinAl {
 	//get determinant of matrix
 	double Matrix::det() const
 	{
-		//Matrix changed = prepare_for_decomp();
-		Matrix U = LU_decomp();
 		double a;
 		double res = 1;
+		int swaps = 0;
+		Matrix U = LUP(swaps);
 		for (int i = 0; i < n; i++)
 		{
 			a = U.get_elem(i, i);
@@ -57,6 +60,8 @@ namespace LinAl {
 				return 0;
 			res *= a;
 		}
+		if (swaps == 1)
+			res *= -1;
 		return res;
 	}
 
@@ -143,16 +148,19 @@ namespace LinAl {
 		set_matr(that);
 	}
 
-	//preparing for LU-decomp
+	//preparing for LU-decomp (not created)
 	Matrix Matrix::prepare_for_decomp() const
 	{
 		//under constuction
+		Matrix temp = { n };
 		return *this;
 	}
 
-	//LU decomposition, return U, diag(L) = {1}
+	//LU decomposition, return U, diag(L) = {1} (bad function, cant solve infinity problem, use LUP)
 	Matrix Matrix::LU_decomp() const
 	{
+		int swaps = 0;
+		LUP(swaps);
 		Matrix L = { n };
 		for (int i = 0; i < n; i++)
 			L.set_elem(i, i, 1);
@@ -192,5 +200,57 @@ namespace LinAl {
 	void Matrix::set_elem(int i, int j, double val)
 	{
 		data[i][j] = val;
+	}
+
+	//print matrix
+	void Matrix::print()
+	{
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n; j++)
+				std::cout << data[i][j] << " ";
+			std::cout << std::endl;
+		}
+	}
+
+	//swap rows
+	void Matrix::swap_rows(int r1, int r2)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			double temp = data[r1][i];
+			data[r1][i] = data[r2][i];
+			data[r2][i] = temp;
+		}
+	}
+
+	//LUP decomposition, return L + U - E
+	Matrix Matrix::LUP(int& swaps) const 
+	{
+		Matrix C = { *this };
+
+		for (int i = 0; i < n; i++) {
+			double major_val = 0;
+			int major_row = -1;
+			for (int row = i; row < n; row++) {
+				if (fabs(C.get_elem(row, i)) > major_val) {
+					major_val = fabs(C.get_elem(row, i));
+					major_row = row;
+				}
+			}
+			if (major_val != 0) {
+				if (major_row != i)
+				{
+					C.swap_rows(major_row, i);
+					swaps = (swaps + 1) % 2;
+				}
+				for (int j = i + 1; j < n; j++) {
+					C.set_elem(j, i, C.get_elem(j, i) / C.get_elem(i, i));
+					for (int k = i + 1; k < n; k++)
+						C.set_elem(j, k, C.get_elem(j, k) - C.get_elem(j, i) * C.get_elem(i, k));
+				}
+			}
+		}
+		return C;
 	}
 }
