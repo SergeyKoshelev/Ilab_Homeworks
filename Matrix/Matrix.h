@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <iostream>
+#include <cmath>
 
 const double EPSILON = 0.00001;
 
