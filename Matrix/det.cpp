@@ -9,7 +9,7 @@ int main()
 	std::cout << "Input dimension of matrix NxN" << std::endl;
 	std::cin >> n;
 
-	Matrix matrix{ n };
+	Matrix<long double> matrix{ n };
 	double temp;
 
 	std::cout << "Input elements of matrix" << std::endl;
