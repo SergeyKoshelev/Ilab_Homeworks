@@ -2,6 +2,8 @@
 #include "Matrix.h"
 #include <vector>
 
+using type = long double;
+
 int main()
 {
 	using namespace LinAl;
@@ -9,7 +11,7 @@ int main()
 	std::cout << "Input dimension of matrix NxN" << std::endl;
 	std::cin >> n;
 
-	Matrix<long double> matrix{ n };
+	std::vector<type> data; 
 	double temp;
 
 	std::cout << "Input elements of matrix" << std::endl;
@@ -18,9 +20,11 @@ int main()
 		for (int j = 0; j < n; j++)
 		{
 			std::cin >> temp;
-			matrix.set_elem(i, j, temp);
+			data.push_back(temp);
 		}
 	}
+
+	Matrix<type> matrix{ data };
 
 	double det = matrix.det();
 	std::cout << "Determinant is: " << det << std::endl;

@@ -2,8 +2,6 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
-#include <random>
-#include <ctime>
 
 const double EPSILON = 0.000001;
 
@@ -12,16 +10,13 @@ namespace LinAl {
 	template <typename T>
 	class Matrix {
 		int n;
-		T* data;
+		std::vector<std::vector<T>> data;
 
 	public:
-		Matrix(int n_) : n(n_) { create_zero(n_); };
-		Matrix(const Matrix<T>& that) { create_copying(that); };
-		Matrix(const std::vector<T>& data_list) { create_from_list(data_list); };
-		Matrix(int dim, T det, int key) { create_random(dim, det, key); };
-
-		int dim() const;
-		T get(int i, int j) const;
+		Matrix(int n_) : n(n_) { create_empty(); };
+		int get_dim() const;
+		void set_elem(int i, int j, T val);
+		T get_elem(int i, int j) const;
 		T det() const;
 		bool operator == (const Matrix<T>& that) const;
 		Matrix<T> operator + (const Matrix<T>& that) const;
@@ -32,33 +27,28 @@ namespace LinAl {
 		void operator *= (T k);
 		void operator = (const Matrix<T>& that);
 		void print();
-		~Matrix();
 
 	private:
-		void set_from_matr(const Matrix<T>& that);
-		void create_zero(int dim);
-		void create_singular(int dim);
-		void create_copying(const Matrix& that);
-		void create_from_list(const std::vector<T>& data_list);
-		void create_random(int dim, T det, int key);
+		Matrix<T> prepare_for_decomp() const;
+		void set_matr(const Matrix<T>& that);
+		Matrix<T> LU_decomp() const;
+		void create_empty();
 		void swap_rows(int r1, int r2);
 		Matrix<T> LUP(int& swaps) const;
-		void set(int i, int j, T val);
-		void add_row_to_row(int row1, int row2, int a);
 	};
 
 	//get dimension of matrix
 	template <typename T>
-	int Matrix<T>::dim() const
+	int Matrix<T>::get_dim() const
 	{
 		return n;
 	}
 
 	//get element from matrix 
 	template <typename T>
-	T Matrix<T>::get(int i, int j) const
+	T Matrix<T>::get_elem(int i, int j) const
 	{
-		return data[i * n + j];
+		return data[i][j];
 	}
 
 	//get determinant of matrix
@@ -71,7 +61,7 @@ namespace LinAl {
 		Matrix<T> U = LUP(swaps);
 		for (int i = 0; i < n; i++)
 		{
-			a = U.get(i, i);
+			a = U.get_elem(i, i);
 			res *= a;
 		}
 		if (swaps == 1)
@@ -83,11 +73,11 @@ namespace LinAl {
 	template <typename T>
 	bool Matrix<T>::operator == (const Matrix<T>& that) const
 	{
-		if (n != that.dim())
+		if (n != that.get_dim())
 			return false;
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
-				if (fabs(get(i, j)- that.get(i, j)) > EPSILON)
+				if (fabs(data[i][j] - that.get_elem(i, j)) > EPSILON)
 					return false;
 		return true;
 	}
@@ -105,10 +95,10 @@ namespace LinAl {
 	template <typename T>
 	void Matrix<T>::operator += (const Matrix<T>& that)
 	{
-		if (n == that.dim())
+		if (n == that.get_dim())
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < n; j++)
-					set(i, j, get(i, j) + that.get(i, j));
+					data[i][j] += that.get_elem(i, j);
 	}
 
 	//operator *= for num
@@ -117,7 +107,7 @@ namespace LinAl {
 	{
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
-				set(i, j, get(i, j) * k);
+				data[i][j] *= k;
 	}
 
 	//operator * for num
@@ -139,9 +129,10 @@ namespace LinAl {
 			{
 				T sum = 0;
 				for (int k = 0; k < n; k++)
-					sum += tmp.get(i, k) * that.get(k, j);
-				set(i, j, sum);
+					sum += tmp.get_elem(i, k) * that.get_elem(k, j);
+				data[i][j] = sum;
 			}
+		//set_matr(tmp);
 	}
 
 	//operator * for matrix
@@ -155,81 +146,77 @@ namespace LinAl {
 
 	//set matrix
 	template <typename T>
-	void Matrix<T>::set_from_matr(const Matrix<T>& that)
+	void Matrix<T>::set_matr(const Matrix<T>& that)
 	{
-		n = that.dim();
+		n = that.get_dim();
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
-				set(i, j, that.get(i, j));
+				data[i][j] = that.get_elem(i, j);
 	}
 
 	//operator =
 	template <typename T>
 	void Matrix<T>::operator = (const Matrix<T>& that)
 	{
-		set_from_matr(that);
+		set_matr(that);
 	}
 
-	//create zero matrix (with mem init)
+	//preparing for LU-decomp (not created)
 	template <typename T>
-	void Matrix<T>::create_zero(int dim)
+	Matrix<T> Matrix<T>::prepare_for_decomp() const
 	{
-		data = new T [dim * dim]{ 0 };
-		n = dim;
+		//under constuction
+		Matrix<T> temp = { n };
+		return *this;
 	}
 
-	//create singular matrix = diag {1, ..., 1}
+	//LU decomposition, return U, diag(L) = {1} (bad function, cant solve infinity problem, use LUP)
 	template <typename T>
-	void Matrix<T>::create_singular(int dim)
+	Matrix<T> Matrix<T>::LU_decomp() const
 	{
-		create_zero(dim);
-		for (int i = 0; i < dim; i++)
-			set(i, i, 1);
-	}
-
-	//create by copying from matrix
-	template <typename T>
-	void Matrix<T>::create_copying(const Matrix& that)
-	{
-		create_zero(that.dim());
-		set_from_matr(that);
-	}
-
-	//create by copying from list of data
-	template <typename T>
-	void Matrix<T>::create_from_list(const std::vector<T>& data_list)
-	{
-		create_zero(sqrt(data_list.size()));
+		int swaps = 0;
+		LUP(swaps);
+		Matrix<T> L = { n };
 		for (int i = 0; i < n; i++)
-			for (int j = 0; j < n; j++)
-				set(i, j, data_list[i * n + j]);
+			L.set_elem(i, i, 1);
+		Matrix<T> U = { n };
+		T sum_u, sum_l;
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = i; j < n; j++)
+			{
+				sum_u = 0;
+				for (int k = 0; k < i; k++)
+					sum_u += U.get_elem(k, j) * L.get_elem(i, k);
+				U.set_elem(i, j, data[i][j] - sum_u);
+			}
+			for (int j = i + 1; j < n; j++)
+			{
+				sum_l = 0;
+				for (int k = 0; k < i; k++)
+					sum_l += U.get_elem(k, i) * L.get_elem(j, k);
+				L.set_elem(j, i, (data[j][i] - sum_l) / U.get_elem(i, i));
+			}
+		}
+		return U;
 	}
 
-	//create random matrix with dim and det (using key, key = 0 for fully random)
+	//create empty matrix
 	template <typename T>
-	void Matrix<T>::create_random(int dim, T det, int key)
+	void Matrix<T>::create_empty()
 	{
-		create_singular(dim);
-		set(0, 0, det);
-		if (key == 0)
-			key = time(0);
-		srand(key);
-		int actions_count = dim * 3;
-		for (int i = 0; i < actions_count; i++)
-		{
-			int a = rand() % 7 - 3;
-			int row1 = rand() % dim;
-			int row2 = rand() % dim;
-			if ((row1 != row2)&&(a != 0))
-				add_row_to_row(row1, row2, a);
-		}
+		std::vector<T> line;
+		for (int i = 0; i < n; i++)
+			line.push_back(0);
+		for (int i = 0; i < n; i++)
+			data.push_back(line);
 	}
 
 	//set elem
 	template <typename T>
-	void Matrix<T>::set(int i, int j, T val)
+	void Matrix<T>::set_elem(int i, int j, T val)
 	{
-		data[i * n + j] = val;
+		data[i][j] = val;
 	}
 
 	//print matrix
@@ -239,7 +226,7 @@ namespace LinAl {
 		for (int i = 0; i < n; i++)
 		{
 			for (int j = 0; j < n; j++)
-				std::cout << get(i, j) << " ";
+				std::cout << data[i][j] << " ";
 			std::cout << std::endl;
 		}
 	}
@@ -248,11 +235,11 @@ namespace LinAl {
 	template <typename T>
 	void Matrix<T>::swap_rows(int r1, int r2)
 	{
-		for (int j = 0; j < n; j++)
+		for (int i = 0; i < n; i++)
 		{
-			T temp = get(r1, j);
-			set(r1, j, get(r2, j));
-			set(r2, j, temp);
+			T temp = data[r1][i];
+			data[r1][i] = data[r2][i];
+			data[r2][i] = temp;
 		}
 	}
 
@@ -266,8 +253,8 @@ namespace LinAl {
 			T major_val = 0;
 			int major_row = -1;
 			for (int row = i; row < n; row++) {
-				if (fabs(C.get(row, i)) > major_val) {
-					major_val = fabs(C.get(row, i));
+				if (fabs(C.get_elem(row, i)) > major_val) {
+					major_val = fabs(C.get_elem(row, i));
 					major_row = row;
 				}
 			}
@@ -278,25 +265,12 @@ namespace LinAl {
 					swaps = (swaps + 1) % 2;
 				}
 				for (int j = i + 1; j < n; j++) {
-					C.set(j, i, C.get(j, i) / C.get(i, i));
+					C.set_elem(j, i, C.get_elem(j, i) / C.get_elem(i, i));
 					for (int k = i + 1; k < n; k++)
-						C.set(j, k, C.get(j, k) - C.get(j, i) * C.get(i, k));
+						C.set_elem(j, k, C.get_elem(j, k) - C.get_elem(j, i) * C.get_elem(i, k));
 				}
 			}
 		}
 		return C;
-	}
-
-	template <typename T>
-	Matrix<T>::~Matrix()
-	{
-		delete[] data;
-	}
-
-	template <typename T>
-	void Matrix<T>::add_row_to_row(int row1, int row2, int a)
-	{
-		for (int i = 0; i < n; i++)
-			set(row1, i, get(row2, i) * a + get(row1, i));
 	}
 }
