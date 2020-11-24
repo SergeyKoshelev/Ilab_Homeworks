@@ -2,20 +2,22 @@
 #include "../../Matrix/Matrix.h"
 #include <vector>
 
-using type = long double;
+using type = int;
+using type1 = long double;
 
 const double RES_EPSILON = 0.1;
+
 
 TEST(matr_ops, case1) {
 	using namespace LinAl;
 	int dim = 3;
 	std::vector<type> data1 = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	std::vector<type> data2 = { 1, 4, 7, 2, 5, 8, 3, 6, 9 };
-	std::vector<type> data3 = { 7, 16, 25, 16, 38.5, 61, 25, 61, 97 };
+	std::vector<type1> data3 = { 7, 16, 25, 16, 38.5, 61, 25, 61, 97 };
 	Matrix<type> matr1{ data1 };
 	Matrix<type> matr2{ data2 };
-	Matrix<type> matr3{ data3 };
-	Matrix<type> res = matr1 * matr2;
+	Matrix<type1> matr3{ data3 };
+	Matrix<type1> res = matr1 * matr2;
 	res *= 0.5;
 	bool check = (res == matr3);
   EXPECT_EQ(check, true);

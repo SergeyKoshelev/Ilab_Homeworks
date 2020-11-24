@@ -2,7 +2,7 @@
 #include "Matrix.h"
 #include <vector>
 
-using type = long double;
+using type = int;
 
 int main()
 {

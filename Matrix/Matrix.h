@@ -16,14 +16,15 @@ namespace LinAl {
 
 	public:
 		Matrix(int n_) : n(n_) { create_zero(n_); };
+		template <typename S> Matrix(const Matrix<S>& that) { create_copying(that); };
 		Matrix(const Matrix<T>& that) { create_copying(that); };
 		Matrix(const std::vector<T>& data_list) { create_from_list(data_list); };
 		Matrix(int dim, T det, int key) { create_random(dim, det, key); };
 
 		int dim() const;
 		T get(int i, int j) const;
-		T det() const;
-		bool operator == (const Matrix<T>& that) const;
+		long double det() const;
+		template <typename S> bool operator == (const Matrix<S>& that) const;
 		Matrix<T> operator + (const Matrix<T>& that) const;
 		void operator += (const Matrix<T>& that);
 		Matrix<T> operator * (const Matrix<T>& that) const;
@@ -31,18 +32,18 @@ namespace LinAl {
 		Matrix<T> operator * (T k) const;
 		void operator *= (T k);
 		void operator = (const Matrix<T>& that);
-		void print();
+		void print() const;
+		void LUP(int& swaps);
 		~Matrix();
 
 	private:
-		void set_from_matr(const Matrix<T>& that);
+		template <typename S> void set_from_matr(const Matrix<S>& that);
 		void create_zero(int dim);
 		void create_singular(int dim);
-		void create_copying(const Matrix& that);
+		template <typename S> void create_copying(const Matrix<S>& that);
 		void create_from_list(const std::vector<T>& data_list);
 		void create_random(int dim, T det, int key);
 		void swap_rows(int r1, int r2);
-		Matrix<T> LUP(int& swaps) const;
 		void set(int i, int j, T val);
 		void add_row_to_row(int row1, int row2, int a);
 	};
@@ -63,12 +64,13 @@ namespace LinAl {
 
 	//get determinant of matrix
 	template <typename T>
-	T Matrix<T>::det() const
+	long double Matrix<T>::det() const
 	{
-		T a;
-		T res = 1;
+		long double a;
+		long double res = 1;
 		int swaps = 0;
-		Matrix<T> U = LUP(swaps);
+		Matrix<long double> U{ *this };
+		U.LUP(swaps);
 		for (int i = 0; i < n; i++)
 		{
 			a = U.get(i, i);
@@ -76,12 +78,13 @@ namespace LinAl {
 		}
 		if (swaps == 1)
 			res *= -1;
+		
 		return res;
 	}
 
 	//operator ==
-	template <typename T>
-	bool Matrix<T>::operator == (const Matrix<T>& that) const
+	template <typename T> template <typename S>
+	bool Matrix<T>::operator == (const Matrix<S>& that) const
 	{
 		if (n != that.dim())
 			return false;
@@ -124,7 +127,7 @@ namespace LinAl {
 	template <typename T>
 	Matrix<T> Matrix<T>::operator * (T k) const
 	{
-		Matrix tmp{ *this };
+		Matrix<T> tmp{ *this };
 		tmp *= k;
 		return tmp;
 	}
@@ -133,7 +136,7 @@ namespace LinAl {
 	template <typename T>
 	void Matrix<T>::operator *= (const Matrix<T>& that)
 	{
-		Matrix tmp{ *this };
+		Matrix<T> tmp{ *this };
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
 			{
@@ -148,25 +151,29 @@ namespace LinAl {
 	template <typename T>
 	Matrix<T> Matrix<T>::operator * (const Matrix<T>& that) const
 	{
-		Matrix tmp{ *this };
+		Matrix<T> tmp{ *this };
 		tmp *= that;
 		return tmp;
 	}
 
 	//set matrix
 	template <typename T>
-	void Matrix<T>::set_from_matr(const Matrix<T>& that)
+	template <typename S>
+	void Matrix<T>::set_from_matr(const Matrix<S>& that)
 	{
 		n = that.dim();
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
-				set(i, j, that.get(i, j));
+			{
+				set(i, j, static_cast<T>(that.get(i, j)));
+			}
 	}
 
 	//operator =
 	template <typename T>
 	void Matrix<T>::operator = (const Matrix<T>& that)
 	{
+		that.print();
 		set_from_matr(that);
 	}
 
@@ -189,7 +196,8 @@ namespace LinAl {
 
 	//create by copying from matrix
 	template <typename T>
-	void Matrix<T>::create_copying(const Matrix& that)
+	template <typename S>
+	void Matrix<T>::create_copying(const Matrix<S>& that)
 	{
 		create_zero(that.dim());
 		set_from_matr(that);
@@ -234,7 +242,7 @@ namespace LinAl {
 
 	//print matrix
 	template <typename T>
-	void Matrix<T>::print()
+	void Matrix<T>::print() const
 	{
 		for (int i = 0; i < n; i++)
 		{
@@ -256,35 +264,31 @@ namespace LinAl {
 		}
 	}
 
-	//LUP decomposition, return L + U - E
-	template <typename T>
-	Matrix<T> Matrix<T>::LUP(int& swaps) const
+	//LUP decomposition, matrix become L + U - E
+	void Matrix<long double>::LUP(int& swaps)
 	{
-		Matrix<T> C = { *this };
-
 		for (int i = 0; i < n; i++) {
-			T major_val = 0;
+			long double major_val = 0;
 			int major_row = -1;
 			for (int row = i; row < n; row++) {
-				if (fabs(C.get(row, i)) > major_val) {
-					major_val = fabs(C.get(row, i));
+				if (fabs(get(row, i)) > major_val) {
+					major_val = fabs(get(row, i));
 					major_row = row;
 				}
 			}
 			if (major_val != 0) {
 				if (major_row != i)
 				{
-					C.swap_rows(major_row, i);
+					swap_rows(major_row, i);
 					swaps = (swaps + 1) % 2;
 				}
 				for (int j = i + 1; j < n; j++) {
-					C.set(j, i, C.get(j, i) / C.get(i, i));
+					set(j, i, get(j, i) / get(i, i));
 					for (int k = i + 1; k < n; k++)
-						C.set(j, k, C.get(j, k) - C.get(j, i) * C.get(i, k));
+						set(j, k, get(j, k) - get(j, i) * get(i, k));
 				}
 			}
 		}
-		return C;
 	}
 
 	template <typename T>
