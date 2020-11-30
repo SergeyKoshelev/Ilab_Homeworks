@@ -7,20 +7,103 @@ using type1 = long double;
 
 const double RES_EPSILON = 0.1;
 
-
-TEST(matr_ops, case1) {
+TEST(matr_ops, plus_plus) {
 	using namespace LinAl;
-	int dim = 3;
-	std::vector<type> data1 = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	std::vector<type> data2 = { 1, 4, 7, 2, 5, 8, 3, 6, 9 };
-	std::vector<type1> data3 = { 7, 16, 25, 16, 38.5, 61, 25, 61, 97 };
-	Matrix<type> matr1{ data1 };
-	Matrix<type> matr2{ data2 };
-	Matrix<type1> matr3{ data3 };
-	Matrix<type1> res = matr1 * matr2;
+	std::vector<int> dataA = { 1, 0, 0, 1 };
+	std::vector<int> dataB = { 0, 1, 1, 0 };
+	std::vector<int> dataC = { 1, 1, 1, 1 };
+	std::vector<int> data_true = { 2, 2, 2, 2 };
+	Matrix<int> A{ dataA };
+	Matrix<int> B{ dataB };
+	Matrix<int> C{ dataC };
+	Matrix<int> matr_true{ data_true };
+	Matrix<int> res = A + B + C;
+	bool check = (res == matr_true);
+	EXPECT_EQ(check, true);
+}
+
+TEST(matr_ops, minus_minus) {
+	using namespace LinAl;
+	std::vector<int> dataA = { -1, 0, 0, -1 };
+	std::vector<int> dataB = { 0, 1, 1, 0 };
+	std::vector<int> dataC = { 1, 1, 1, 1 };
+	std::vector<int> data_true = { -2, -2, -2, -2 };
+	Matrix<int> A{ dataA };
+	Matrix<int> B{ dataB };
+	Matrix<int> C{ dataC };
+	Matrix<int> matr_true{ data_true };
+	Matrix<int> res = A - B - C;
+	bool check = (res == matr_true);
+	EXPECT_EQ(check, true);
+}
+
+TEST(matr_ops, mult_mult_num) {
+	using namespace LinAl;
+	std::vector<int> data = { 1, 2, 3, 4 };
+	std::vector<int> data_true = { -3, -6, -9, -12 };
+	int k1 = 3;
+	int k2 = -1;
+	Matrix<int> matr_true{ data_true };
+	Matrix<int> matr{ data };
+	Matrix<int> res = k1 * matr * k2;
+	bool check = (res == matr_true);
+	EXPECT_EQ(check, true);
+}
+
+TEST(matr_ops, assign_dif_sizes) {
+	using namespace LinAl;
+	std::vector<int> data1 = { 1, 2, 3, 4 };
+	std::vector<int> data2 = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	Matrix<int> matr1{ data1 };
+	Matrix<int> matr2{ data2 };
+	Matrix<int> res1{ data1 };
+	Matrix<int> res2{ data2 };
+	res1 = matr2;
+	res2 = matr1;
+	bool check = ((res1 == matr2) && (res2 == matr1));
+	EXPECT_EQ(check, true);
+}
+
+TEST(matr_ops, mult_mult_matr) {
+	using namespace LinAl;
+	std::vector<int> dataA = { 1, 2, 0, -1, 3, -2, 0, 1, -3 };
+	std::vector<int> dataB = { 3, -1, 1, 0, 2, -2, 3, 1, 0 };
+	std::vector<int> dataC = { 1, 1, -2, -1, 0, 3, 0, 2, -3 };
+	std::vector<int> data_true = { 0, -3, 12, -14, -23, 54, -8, -13, 21 };
+	Matrix<int> A{ dataA };
+	Matrix<int> B{ dataB };
+	Matrix<int> C{ dataC };
+	Matrix<int> matr_true{ data_true };
+	Matrix<int> res = A * B * C;
+	bool check = (res == matr_true);
+	EXPECT_EQ(check, true);
+}
+
+TEST(matr_ops, 2ops) {
+	using namespace LinAl;
+	std::vector<type> dataA = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	std::vector<type> dataB = { 1, 4, 7, 2, 5, 8, 3, 6, 9 };
+	std::vector<type1> dataC = { 7, 16, 25, 16, 38.5, 61, 25, 61, 97 };
+	Matrix<type> A{ dataA };
+	Matrix<type> B{ dataB };
+	Matrix<type1> C{ dataC };
+	Matrix<type1> res = A * B;
 	res *= 0.5;
-	bool check = (res == matr3);
-  EXPECT_EQ(check, true);
+	bool check = (res == C);
+	EXPECT_EQ(check, true);
+}
+
+TEST(matr_ops, many_ops) {
+	using namespace LinAl;
+	std::vector<int> dataA = {1, 1, 1, 1};
+	std::vector<int> dataB = {0, 2, -1, 1 };
+	std::vector<long double> dataC = { 5, -7, 3, -1  };
+	Matrix<int> A{ dataA };
+	Matrix<int> B{ dataB };
+	Matrix<long double> C{ dataC };
+	Matrix<long double> res = (A + B * 2) * -1 * B ;
+	bool check = (res == C);
+	EXPECT_EQ(check, true);
 }
 
 TEST(deter2x2, case1)

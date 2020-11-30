@@ -16,8 +16,8 @@ namespace LinAl {
 
 	public:
 		Matrix(int n_) : n(n_) { create_zero(n_); };
-		template <typename S> Matrix(const Matrix<S>& that) { create_copying(that); };
-		Matrix(const Matrix<T>& that) { create_copying(that); };
+		template <typename S> Matrix(const Matrix<S>& that) noexcept { create_copying(that); };
+		Matrix(const Matrix<T>& that) noexcept { create_copying(that); };
 		Matrix(const std::vector<T>& data_list) { create_from_list(data_list); };
 		Matrix(int dim, T det, int key) { create_random(dim, det, key); };
 
@@ -27,6 +27,8 @@ namespace LinAl {
 		template <typename S> bool operator == (const Matrix<S>& that) const;
 		Matrix<T> operator + (const Matrix<T>& that) const;
 		void operator += (const Matrix<T>& that);
+		void operator -= (const Matrix<T>& that);
+		Matrix<T> operator - (const Matrix<T>& that) const;
 		Matrix<T> operator * (const Matrix<T>& that) const;
 		void operator *= (const Matrix<T>& that);
 		Matrix<T> operator * (T k) const;
@@ -46,6 +48,7 @@ namespace LinAl {
 		void swap_rows(int r1, int r2);
 		void set(int i, int j, T val);
 		void add_row_to_row(int row1, int row2, int a);
+		void mem_init(int dim);
 	};
 
 	//get dimension of matrix
@@ -90,7 +93,7 @@ namespace LinAl {
 			return false;
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
-				if (fabs(get(i, j)- that.get(i, j)) > EPSILON)
+				if (fabs(get(i, j) - that.get(i, j)) > EPSILON)
 					return false;
 		return true;
 	}
@@ -123,7 +126,7 @@ namespace LinAl {
 				set(i, j, get(i, j) * k);
 	}
 
-	//operator * for num
+	//operator * for num (num on the right side)
 	template <typename T>
 	Matrix<T> Matrix<T>::operator * (T k) const
 	{
@@ -132,19 +135,29 @@ namespace LinAl {
 		return tmp;
 	}
 
+	//operator * for num (num on the left side)
+	template <typename T>
+	Matrix<T> operator * (T k, const Matrix<T>& matr) { return matr * k; }
+
 	//operator *= for matrix
 	template <typename T>
 	void Matrix<T>::operator *= (const Matrix<T>& that)
 	{
-		Matrix<T> tmp{ *this };
+		std::vector<T> new_row;
+		new_row.resize(that.dim());
+		//Matrix<T> tmp{ *this };
 		for (int i = 0; i < n; i++)
+		{
 			for (int j = 0; j < n; j++)
 			{
-				T sum = 0;
+				//T sum = 0;
+				new_row[j] = 0;
 				for (int k = 0; k < n; k++)
-					sum += tmp.get(i, k) * that.get(k, j);
-				set(i, j, sum);
+					new_row[j] += get(i, k) * that.get(k, j);
 			}
+			for (int j = 0; j < n; j++)
+				set(i, j, new_row[j]);
+		}
 	}
 
 	//operator * for matrix
@@ -156,12 +169,26 @@ namespace LinAl {
 		return tmp;
 	}
 
-	//set matrix
+	//operator -=
 	template <typename T>
-	template <typename S>
+	void Matrix<T>::operator -= (const Matrix<T>& that)
+	{
+		operator+=(that * (-1));
+	}
+
+	//operator -
+	template <typename T>
+	Matrix<T> Matrix<T>::operator - (const Matrix<T>& that) const
+	{
+		Matrix tmp{ *this };
+		tmp -= that;
+		return tmp;
+	}
+
+	//set matrix, both matrix must have the same sizes and be initialized (only copying elements)
+	template <typename T> template <typename S>
 	void Matrix<T>::set_from_matr(const Matrix<S>& that)
 	{
-		n = that.dim();
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
 			{
@@ -173,7 +200,12 @@ namespace LinAl {
 	template <typename T>
 	void Matrix<T>::operator = (const Matrix<T>& that)
 	{
-		that.print();
+		if (n != that.dim())
+		{
+			delete[] data;
+			mem_init(that.dim());
+			n = that.dim();
+		}
 		set_from_matr(that);
 	}
 
@@ -181,7 +213,7 @@ namespace LinAl {
 	template <typename T>
 	void Matrix<T>::create_zero(int dim)
 	{
-		data = new T [dim * dim]{ 0 };
+		mem_init(dim);
 		n = dim;
 	}
 
@@ -189,7 +221,8 @@ namespace LinAl {
 	template <typename T>
 	void Matrix<T>::create_singular(int dim)
 	{
-		create_zero(dim);
+		n = dim;
+		mem_init(dim);
 		for (int i = 0; i < dim; i++)
 			set(i, i, 1);
 	}
@@ -199,7 +232,8 @@ namespace LinAl {
 	template <typename S>
 	void Matrix<T>::create_copying(const Matrix<S>& that)
 	{
-		create_zero(that.dim());
+		n = that.dim();
+		mem_init(that.dim());
 		set_from_matr(that);
 	}
 
@@ -207,7 +241,8 @@ namespace LinAl {
 	template <typename T>
 	void Matrix<T>::create_from_list(const std::vector<T>& data_list)
 	{
-		create_zero(sqrt(data_list.size()));
+		n = sqrt(data_list.size());
+		mem_init(n);
 		for (int i = 0; i < n; i++)
 			for (int j = 0; j < n; j++)
 				set(i, j, data_list[i * n + j]);
@@ -265,6 +300,7 @@ namespace LinAl {
 	}
 
 	//LUP decomposition, matrix become L + U - E
+	template<>
 	void Matrix<long double>::LUP(int& swaps)
 	{
 		for (int i = 0; i < n; i++) {
@@ -291,16 +327,25 @@ namespace LinAl {
 		}
 	}
 
+	//destructor
 	template <typename T>
 	Matrix<T>::~Matrix()
 	{
 		delete[] data;
 	}
 
+	// row1 += row2 * a
 	template <typename T>
 	void Matrix<T>::add_row_to_row(int row1, int row2, int a)
 	{
 		for (int i = 0; i < n; i++)
 			set(row1, i, get(row2, i) * a + get(row1, i));
+	}
+
+	//initialize memory with "new" and set all elements 0
+	template <typename T>
+	void Matrix<T>::mem_init(int dim)
+	{
+		data = new T[dim * dim]{ 0 };
 	}
 }
